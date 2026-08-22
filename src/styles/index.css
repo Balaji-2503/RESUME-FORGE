@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root { color-scheme: light; }
+  .dark { color-scheme: dark; }
+
+  html, body, #root { height: 100%; }
+
+  body {
+    @apply bg-ink-100 text-ink-900 font-ui antialiased;
+  }
+  .dark body {
+    @apply bg-ink-950 text-ink-100;
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { @apply bg-ink-300 rounded-full; }
+  .dark ::-webkit-scrollbar-thumb { @apply bg-ink-700; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  [contenteditable]:focus { outline: none; }
+}
+
+@layer components {
+  .field {
+    @apply w-full rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 text-sm text-ink-900
+           placeholder:text-ink-400 transition
+           focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25 focus:outline-none;
+  }
+  .dark .field {
+    @apply border-ink-700 bg-ink-900 text-ink-100 placeholder:text-ink-500;
+  }
+
+  .label {
+    @apply mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-500;
+  }
+  .dark .label { @apply text-ink-400; }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium
+           transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50
+           disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800; }
+  .btn-ghost { @apply btn text-ink-600 hover:bg-ink-200/70 hover:text-ink-900; }
+  .dark .btn-ghost { @apply text-ink-300 hover:bg-ink-800 hover:text-white; }
+  .btn-soft { @apply btn border border-ink-200 bg-white text-ink-700 hover:bg-ink-50 hover:text-ink-900; }
+  .dark .btn-soft { @apply border-ink-700 bg-ink-900 text-ink-200 hover:bg-ink-800 hover:text-white; }
+  .btn-danger { @apply btn text-red-600 hover:bg-red-50; }
+  .dark .btn-danger { @apply text-red-400 hover:bg-red-950/50; }
+
+  .card {
+    @apply rounded-xl border border-ink-200 bg-white shadow-sm;
+  }
+  .dark .card { @apply border-ink-800 bg-ink-900; }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-md bg-ink-100 px-2 py-0.5 text-xs font-medium text-ink-700;
+  }
+  .dark .chip { @apply bg-ink-800 text-ink-200; }
+}
+
+/* ---------------------------------------------------------------------------
+   Résumé document. Everything below renders inside .rf-doc, which is sized in
+   real millimetres so the on-screen preview and the printed page agree.
+   --------------------------------------------------------------------------- */
+
+.rf-doc {
+  background: #fff;
+  color: var(--rf-text);
+  font-family: var(--rf-body-font);
+  font-size: var(--rf-font-size);
+  line-height: var(--rf-line-height);
+  box-sizing: border-box;
+  position: relative;
+}
+
+.rf-doc h1, .rf-doc h2, .rf-doc h3 {
+  font-family: var(--rf-heading-font);
+  margin: 0;
+  line-height: 1.2;
+}
+.rf-doc p { margin: 0; }
+.rf-doc ul { margin: 0; padding: 0; list-style: none; }
+
+.rf-link { color: inherit; text-decoration: none; }
+.rf-link:hover { text-decoration: underline; }
+
+.rf-section + .rf-section { margin-top: var(--rf-section-gap); }
+.rf-entry { break-inside: avoid; page-break-inside: avoid; }
+.rf-section-title { break-after: avoid; page-break-after: avoid; }
+
+/* Page-break guides in the preview only. */
+.rf-page-guide {
+  position: absolute;
+  left: 0; right: 0;
+  border-top: 1px dashed rgba(29, 69, 245, .45);
+  pointer-events: none;
+}
+.rf-page-guide::after {
+  content: attr(data-label);
+  position: absolute;
+  right: 0;
+  top: 4px;
+  font: 500 9px/1 'Inter', system-ui, sans-serif;
+  letter-spacing: .04em;
+  color: rgba(29, 69, 245, .8);
+  background: rgba(255, 255, 255, .9);
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+/* ---------------------------------------------------------------------------
+   Print. Only the document survives; the editor chrome is removed entirely so
+   the browser's own "Save as PDF" produces a clean file.
+   --------------------------------------------------------------------------- */
+
+@media print {
+  html, body {
+    background: #fff !important;
+    width: auto; height: auto;
+    margin: 0 !important; padding: 0 !important;
+  }
+
+  /* The editor is removed from the page entirely; only the print root is laid out. */
+  #root { display: none !important; }
+
+  #print-root { display: block !important; }
+
+  #print-root .rf-doc {
+    width: 100% !important;
+    min-height: 0 !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    transform: none !important;
+  }
+
+  .rf-page-guide, .no-print { display: none !important; }
+
+  .rf-doc a { text-decoration: none !important; }
+
+  /* Colour fidelity: tinted headings and sidebars must survive the PDF. */
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
