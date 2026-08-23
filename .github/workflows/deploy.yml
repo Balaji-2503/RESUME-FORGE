@@ -29,12 +29,19 @@ jobs:
           node-version: 20
           cache: npm
 
+      # The deploy never drives a browser; skip Playwright's ~150MB download.
       - run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
       # tsc runs as part of build, so a type error fails the deploy.
       - run: npm run build
 
+      # enablement turns the Pages site on via the API using this workflow's
+      # token, so a fresh repo does not need anyone to visit Settings first.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
