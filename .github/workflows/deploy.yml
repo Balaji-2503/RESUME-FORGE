@@ -1,35 +1,36 @@
-name: Deploy to GitHub Pages
+name: Publish site
 
-# Deploys on a push to the default branch. `workflow_dispatch` lets you deploy
-# any branch by hand from the Actions tab, which is how you publish before this
-# work is merged into main.
+# GitHub Pages for this repo is served from the `gh-pages` branch, which it
+# configured automatically the first time that branch appeared. So this workflow
+# rebuilds and republishes that branch rather than using actions/deploy-pages —
+# that action only works when the Pages source is set to "GitHub Actions", which
+# needs a repo-admin change GITHUB_TOKEN cannot make.
 on:
   push:
-    branches: [main, master]
+    # `claude/resume-forge-oelrev` is the repository's default branch today.
+    # Once this work lands on main, drop it from the list.
+    branches: [main, master, claude/resume-forge-oelrev]
   workflow_dispatch:
 
-# Allow one deployment at a time; a queued run supersedes an older one.
 concurrency:
-  group: pages
+  group: publish
   cancel-in-progress: true
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
-      # The deploy never drives a browser; skip Playwright's ~150MB download.
+      # The build never drives a browser; skip Playwright's ~150MB download.
       - run: npm ci
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
@@ -37,26 +38,20 @@ jobs:
       # tsc runs as part of build, so a type error fails the deploy.
       - run: npm run build
 
-      # `enablement` asks the API to create the Pages site. GITHUB_TOKEN can
-      # deploy to an existing site but usually cannot create one — that needs
-      # repo-admin rights — so on a repo where Pages has never been turned on
-      # this step fails with "Resource not accessible by integration". Enable it
-      # once under Settings → Pages → Source: GitHub Actions and every run after
-      # that succeeds; the flag still helps anyone forking into an org whose
-      # token does have the rights.
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
+      # Without this GitHub runs the built output through Jekyll.
+      - run: touch dist/.nojekyll
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      # gh-pages holds generated output only, so each publish replaces it
+      # wholesale. Nothing but this job ever writes to that branch.
+      - name: Publish dist to gh-pages
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd dist
+          git init -q -b gh-pages
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Publish site from ${GITHUB_SHA::7}"
+          git push -q --force \
+            "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages

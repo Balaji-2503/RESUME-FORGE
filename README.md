@@ -94,20 +94,21 @@ or set `CHROMIUM_PATH` to a browser you already have.
 The build is a static bundle with relative asset paths, so it works from any
 host and from any sub-path.
 
-**GitHub Pages** is wired up already — `.github/workflows/deploy.yml` builds and
-deploys on every push to `main`. One-time setup:
+**Live at https://balaji-2503.github.io/RESUME-FORGE/**
 
-1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
-   This step needs a human once: the workflow asks the API to create the Pages
-   site itself, but `GITHUB_TOKEN` can deploy to an existing site without being
-   able to create one, so the first run fails with *Resource not accessible by
-   integration* until the toggle is flipped.
-2. Push to `main`, or run *Deploy to GitHub Pages* manually from the **Actions**
-   tab to publish a branch that hasn't been merged yet.
+GitHub Pages serves the `gh-pages` branch, which holds the built output and
+nothing else. `.github/workflows/deploy.yml` rebuilds and force-pushes that
+branch on every push to the default branch, so publishing is automatic.
 
-The site lands at `https://<user>.github.io/<repo>/`. If you fork or rename,
-update the two absolute URLs in `index.html` — the `og:image` and `og:url` meta
-tags, which link previews can't resolve from a relative path.
+It does *not* use `actions/deploy-pages`. That action requires the Pages source
+to be set to "GitHub Actions", and `GITHUB_TOKEN` can deploy to an existing
+Pages site but cannot create one — that endpoint needs repo-admin rights. A
+`gh-pages` branch, by contrast, GitHub picks up on its own the first time it
+appears, which is why this repo went live without anyone touching Settings.
+
+If you fork or rename, update the two absolute URLs in `index.html` — the
+`og:image` and `og:url` meta tags, which link previews can't resolve from a
+relative path.
 
 **Anywhere else** — Netlify, Vercel, Cloudflare Pages, S3, or a plain nginx
 directory: build command `npm run build`, publish directory `dist`. There is no
