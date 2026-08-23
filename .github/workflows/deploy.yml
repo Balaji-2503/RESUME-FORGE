@@ -37,8 +37,13 @@ jobs:
       # tsc runs as part of build, so a type error fails the deploy.
       - run: npm run build
 
-      # enablement turns the Pages site on via the API using this workflow's
-      # token, so a fresh repo does not need anyone to visit Settings first.
+      # `enablement` asks the API to create the Pages site. GITHUB_TOKEN can
+      # deploy to an existing site but usually cannot create one — that needs
+      # repo-admin rights — so on a repo where Pages has never been turned on
+      # this step fails with "Resource not accessible by integration". Enable it
+      # once under Settings → Pages → Source: GitHub Actions and every run after
+      # that succeeds; the flag still helps anyone forking into an org whose
+      # token does have the rights.
       - uses: actions/configure-pages@v5
         with:
           enablement: true

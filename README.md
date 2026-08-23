@@ -98,6 +98,10 @@ host and from any sub-path.
 deploys on every push to `main`. One-time setup:
 
 1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
+   This step needs a human once: the workflow asks the API to create the Pages
+   site itself, but `GITHUB_TOKEN` can deploy to an existing site without being
+   able to create one, so the first run fails with *Resource not accessible by
+   integration* until the toggle is flipped.
 2. Push to `main`, or run *Deploy to GitHub Pages* manually from the **Actions**
    tab to publish a branch that hasn't been merged yet.
 
