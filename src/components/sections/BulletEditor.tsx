@@ -1,17 +1,23 @@
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Sparkles, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import BulletAssist from './BulletAssist'
 import { AutoTextarea, Grip, IconButton, MoveButtons, useSortable } from '@/components/ui'
 import { move } from '@/state/actions'
 
 /** Bullet list editor. Enter adds the next bullet, Backspace on an empty one
  *  removes it — so a whole role can be written without touching the mouse. */
 export default function BulletEditor({
-  bullets, onChange, placeholder = 'Led …, reducing … by 30%',
+  bullets, onChange, placeholder = 'Led …, reducing … by 30%', role, company,
 }: {
   bullets: string[]
   onChange: (next: string[]) => void
   placeholder?: string
+  /** Passed to AI assist so a rewrite knows the job it belongs to. */
+  role?: string
+  company?: string
 }) {
   const sortable = useSortable((from, to) => onChange(move(bullets, from, to)))
+  const [assisting, setAssisting] = useState<number | null>(null)
 
   const setAt = (index: number, value: string) =>
     onChange(bullets.map((b, i) => (i === index ? value : b)))
@@ -37,8 +43,8 @@ export default function BulletEditor({
       </div>
 
       {bullets.map((bullet, index) => (
+        <div key={index}>
         <div
-          key={index}
           {...sortable.rowProps(index)}
           className={`group flex items-start gap-1 rounded-lg transition ${
             sortable.overIndex === index ? 'ring-2 ring-brand-500/40' : ''
@@ -58,6 +64,13 @@ export default function BulletEditor({
             }}
           />
           <div className="flex shrink-0 items-center">
+            <IconButton
+              label="Improve this bullet with AI"
+              disabled={!bullet.trim()}
+              onClick={() => setAssisting((i) => (i === index ? null : index))}
+            >
+              <Sparkles className={`h-3.5 w-3.5 ${assisting === index ? 'text-brand-600' : ''}`} />
+            </IconButton>
             <MoveButtons
               index={index}
               count={bullets.length}
@@ -68,6 +81,17 @@ export default function BulletEditor({
               <Trash2 className="h-3.5 w-3.5" />
             </IconButton>
           </div>
+        </div>
+
+        {assisting === index ? (
+          <BulletAssist
+            bullet={bullet}
+            role={role}
+            company={company}
+            onApply={(text) => setAt(index, text)}
+            onClose={() => setAssisting(null)}
+          />
+        ) : null}
         </div>
       ))}
 

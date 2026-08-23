@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { AlertTriangle, CheckCircle2, CircleAlert, Lightbulb } from 'lucide-react'
+import AiSettings from './AiSettings'
 import { TextArea } from '@/components/ui'
 import { reviewResume } from '@/lib/analysis'
 import { setTargetJob } from '@/state/actions'
@@ -27,6 +28,8 @@ export default function ReviewPanel() {
   return (
     <div className="space-y-3">
       <ScoreCard score={review.score} counts={counts} dark={dark} />
+
+      <AiSettings />
 
       <div className="card p-3">
         <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">

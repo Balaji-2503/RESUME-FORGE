@@ -8,6 +8,8 @@ import DesignPanel from './components/panels/DesignPanel'
 import ReviewPanel from './components/panels/ReviewPanel'
 import { useKeyboard } from './components/ui'
 import { reviewResume } from './lib/analysis'
+import { isReady, providerById } from './lib/ai/config'
+import { useAiConfig } from './state/ai'
 import { store, useResume, useUI } from './state/store'
 import type { AppState } from './lib/types'
 
@@ -20,6 +22,7 @@ const PANELS: { id: AppState['ui']['panel']; label: string; icon: typeof LayoutL
 export default function App() {
   const resume = useResume()
   const { dark, panel } = useUI()
+  const ai = useAiConfig()
   // Below `lg` the editor and the page can't sit side by side, so they take
   // turns. Transient by design — which pane you last looked at is not worth
   // restoring on a later visit.
@@ -119,8 +122,13 @@ export default function App() {
             {panel === 'review' ? <ReviewPanel /> : null}
           </div>
 
+          {/* The privacy claim has to stay literally true. Once AI assist is
+              configured, one bullet at a time does leave the device, so say so
+              rather than keeping the blanket promise. */}
           <footer className="muted border-t border-ink-200 px-3 py-2 text-[11px] leading-relaxed dark:border-ink-800">
-            Everything stays in this browser — no account, no upload, no server.
+            {isReady(ai)
+              ? `Your résumé stays in this browser. AI assist sends only the bullet you pick to ${providerById(ai.provider).label}.`
+              : 'Everything stays in this browser — no account, no upload, no server.'}
           </footer>
         </aside>
 

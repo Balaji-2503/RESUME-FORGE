@@ -18,7 +18,9 @@ that is secretly an image. Resume Forge is built around three ideas:
   printed by the browser's own engine, so what you see is what a recruiter opens.
   The exported PDF contains selectable, machine-readable text — not a screenshot.
 - **Your data is yours.** Everything stays on your device. Export the whole
-  résumé as JSON at any time and re-import it anywhere.
+  résumé as JSON at any time and re-import it anywhere. The optional AI assist
+  is the single exception, it is off until you add a key, and even then it sends
+  one bullet at a time to a provider *you* choose — never the whole résumé.
 - **Advice, not just fields.** The Review panel checks the things screeners
   actually look for and tells you *why*, in plain language.
 
@@ -56,6 +58,19 @@ that is secretly an image. Resume Forge is built around three ideas:
   details, undated roles, and sections you left empty
 - Paste a job description to see which of its terms your résumé already covers —
   keyword extraction that ignores boilerplate and prefers real phrases
+
+**AI assist (optional, off by default)**
+- "Improve this bullet" rewrites one bullet at a time and explains why each
+  variant is stronger
+- **It will not invent facts.** No made-up numbers, percentages, team sizes or
+  tools. If a bullet has no measurable result, it asks *you* for the figure
+  instead of supplying one — a fabricated metric is a fabricated credential, and
+  you are the one who has to defend it in the interview
+- Runs on **your own API key**, called straight from the browser. Works with
+  Groq (free tier), or any OpenAI-compatible endpoint — OpenRouter, Together, a
+  local llama.cpp server
+- Only the single bullet you clicked, plus its job title, is ever sent. The key
+  is stored in this browser alone and never appears in a résumé export
 
 **Export**
 - PDF via the browser's print dialog (⌘P), with the filename pre-filled
@@ -147,6 +162,27 @@ A few decisions worth knowing about:
   saved document can't break the app.
 - **Emptiness is content-aware.** A section you started but never filled in is
   skipped when the page renders, rather than leaving a bare heading behind.
+
+## AI assist, and why it works this way
+
+There is no backend, so there is nowhere to hide a shared API key — and paying
+for strangers' tokens is not a thing a free tool can do. So AI assist is
+bring-your-own-key, called directly from the browser.
+
+That only works if the provider allows browser-origin requests. Groq does
+(`access-control-allow-origin: *`), which is why it is the default and why the
+provider list is limited to endpoints that have been checked. Anything speaking
+the OpenAI `/chat/completions` shape can be plugged in under *Other*.
+
+The honest trade-off: a key in `localStorage` is readable by any script that
+runs on the page. This page loads no third-party scripts and injects no
+user-supplied HTML, so the realistic risk is low, but it is your key and your
+call — the UI says so rather than burying it.
+
+The prompt is deliberately constrained. The model may only restate facts it was
+given, and anything it wishes it had becomes a question back to you. Every other
+résumé tool happily invents "improved performance by 40%", and that number will
+be the first thing an interviewer asks about.
 
 ## Accessibility
 

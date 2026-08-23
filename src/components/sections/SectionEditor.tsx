@@ -215,7 +215,12 @@ function ExperienceBody({ section }: { section: ExperienceSection }) {
                 onCurrent={(v) => edit(id, (i) => { i.current = v })}
               />
               <TextField label="One-line context (optional)" value={item.summary} onChange={(v) => edit(id, (i) => { i.summary = v })} placeholder="Series B fintech, 40 engineers" />
-              <BulletEditor bullets={item.bullets} onChange={(next) => edit(id, (i) => { i.bullets = next })} />
+              <BulletEditor
+                bullets={item.bullets}
+                role={item.role}
+                company={item.company}
+                onChange={(next) => edit(id, (i) => { i.bullets = next })}
+              />
               <TagField label="Tech / tags" values={item.tags} onChange={(next) => edit(id, (i) => { i.tags = next })} placeholder="Go, Kafka, PostgreSQL" />
             </div>
           </ItemShell>
@@ -297,7 +302,13 @@ function ProjectsBody({ section }: { section: ProjectsSection }) {
                 <TextField label="End" value={item.end} onChange={(v) => edit(id, (i) => { i.end = v })} placeholder="2024" />
               </div>
               <TextField label="One-line description" value={item.summary} onChange={(v) => edit(id, (i) => { i.summary = v })} placeholder="Embeddable double-entry ledger for Go services." />
-              <BulletEditor bullets={item.bullets} onChange={(next) => edit(id, (i) => { i.bullets = next })} placeholder="1.8k stars; used in production by three startups." />
+              <BulletEditor
+                bullets={item.bullets}
+                role={item.role}
+                company={item.name}
+                onChange={(next) => edit(id, (i) => { i.bullets = next })}
+                placeholder="1.8k stars; used in production by three startups."
+              />
               <TagField label="Tech / tags" values={item.tags} onChange={(next) => edit(id, (i) => { i.tags = next })} placeholder="Go, SQLite" />
             </div>
           </ItemShell>
