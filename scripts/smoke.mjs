@@ -65,6 +65,34 @@ check('Enter adds the next bullet', (await page.locator('[data-bullet-field]').c
 const headings = await page.locator('.rf-doc h2').allInnerTexts()
 check('empty sections are not rendered', !headings.some((h) => /education|projects|languages/i.test(h)))
 
+// Reordering works without drag — the path touch and keyboard users need.
+await page.getByRole('button', { name: 'Add section' }).click()
+await page.getByRole('button', { name: 'Awards & Honours', exact: true }).click()
+await page.waitForTimeout(300)
+// Section order is read from the collapsible headers, which list every
+// section whether it is expanded or not.
+const sectionOrder = () =>
+  page.locator('aside button[aria-expanded]').evaluateAll((els) =>
+    els.map((e) => e.querySelector('span.truncate')?.textContent?.trim() ?? ''))
+const orderBefore = await sectionOrder()
+await page.getByRole('button', { name: 'Move section up' }).last().click()
+await page.waitForTimeout(300)
+const orderAfter = await sectionOrder()
+check('a section can be moved without dragging',
+  orderBefore.length > 1 && orderAfter.join() !== orderBefore.join())
+
+// The preview is reachable on a phone-sized viewport.
+await page.setViewportSize({ width: 390, height: 844 })
+await page.waitForTimeout(400)
+check('mobile hides the preview behind a switch', !(await page.locator('.rf-doc').first().isVisible()))
+await page.getByRole('button', { name: 'Preview' }).click()
+await page.waitForTimeout(600)
+const docWidth = await page.locator('.rf-doc').first().evaluate((el) => el.getBoundingClientRect().width)
+check('mobile preview opens and fits the screen', docWidth > 200 && docWidth <= 390)
+await page.getByRole('button', { name: 'Edit' }).click()
+await page.setViewportSize({ width: 1440, height: 900 })
+await page.waitForTimeout(300)
+
 // Theme.
 await page.getByRole('button', { name: 'Dark mode' }).click()
 await page.waitForTimeout(300)

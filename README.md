@@ -35,6 +35,8 @@ that is secretly an image. Resume Forge is built around three ideas:
   for a specific application
 - Multiple résumés side by side, with duplicate for tailoring a variant
 - Undo/redo (⌘Z / ⇧⌘Z) and autosave
+- Reorder by dragging, or with arrow buttons that also work on touch and by
+  keyboard
 
 **Design**
 - Five templates: Classic, Modern, Compact, Elegant, Technical
@@ -43,6 +45,8 @@ that is secretly an image. Resume Forge is built around three ideas:
 - A4 or US Letter, with page-break guides drawn where the page will actually break
 - Only system-resident fonts, so the PDF renders the same on every machine
 - Light and dark editor; the page itself always stays paper-white
+- Works on a phone: the editor and the page take turns behind an Edit/Preview
+  switch, and the page re-fits when you rotate
 
 **Review**
 - A 0–100 score with every deduction explained
@@ -85,6 +89,26 @@ npm run smoke        # end-to-end checks against a running preview
 The smoke test needs a Playwright Chromium (`npx playwright install chromium`),
 or set `CHROMIUM_PATH` to a browser you already have.
 
+## Publishing it
+
+The build is a static bundle with relative asset paths, so it works from any
+host and from any sub-path.
+
+**GitHub Pages** is wired up already — `.github/workflows/deploy.yml` builds and
+deploys on every push to `main`. One-time setup:
+
+1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
+2. Push to `main`, or run *Deploy to GitHub Pages* manually from the **Actions**
+   tab to publish a branch that hasn't been merged yet.
+
+The site lands at `https://<user>.github.io/<repo>/`. If you fork or rename,
+update the two absolute URLs in `index.html` — the `og:image` and `og:url` meta
+tags, which link previews can't resolve from a relative path.
+
+**Anywhere else** — Netlify, Vercel, Cloudflare Pages, S3, or a plain nginx
+directory: build command `npm run build`, publish directory `dist`. There is no
+server side, no environment variables and no runtime configuration.
+
 ## Exporting a good PDF
 
 Press **Download PDF** (or ⌘P) and, in the print dialog:
@@ -119,12 +143,23 @@ A few decisions worth knowing about:
 - **Emptiness is content-aware.** A section you started but never filled in is
   skipped when the page renders, rather than leaving a bare heading behind.
 
+## Accessibility
+
+Audited with axe-core (WCAG 2.1 A and AA) across the Content, Design and Review
+panels, in light and dark, on desktop and mobile — currently zero violations.
+Every reorder affordance has a keyboard- and touch-operable equivalent, so
+nothing depends on drag-and-drop.
+
 ## Limits
 
 - The review encodes common résumé-screening conventions. It is a second pair of
   eyes, not a guarantee about any particular employer's system.
 - `localStorage` is per-browser and per-device. Export the JSON if you care about
-  the file.
+  the file. If the app ever crashes, the error screen hands your saved data back
+  as a download before offering to clear it.
+- Print output is verified in Chromium. Firefox and Safari use the same standard
+  print CSS, but their pagination differs slightly — check your PDF before you
+  send it.
 
 ## Licence
 

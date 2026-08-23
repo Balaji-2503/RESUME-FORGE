@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle2, CircleAlert, Lightbulb } from 'lucide-reac
 import { TextArea } from '@/components/ui'
 import { reviewResume } from '@/lib/analysis'
 import { setTargetJob } from '@/state/actions'
-import { useResume } from '@/state/store'
+import { useResume, useUI } from '@/state/store'
 import type { Severity } from '@/lib/analysis'
 
 const TONE: Record<Severity, { icon: typeof AlertTriangle; ring: string; text: string; label: string }> = {
@@ -15,6 +15,7 @@ const TONE: Record<Severity, { icon: typeof AlertTriangle; ring: string; text: s
 
 export default function ReviewPanel() {
   const resume = useResume()
+  const { dark } = useUI()
   const review = useMemo(() => reviewResume(resume), [resume])
 
   const counts = {
@@ -25,7 +26,7 @@ export default function ReviewPanel() {
 
   return (
     <div className="space-y-3">
-      <ScoreCard score={review.score} counts={counts} />
+      <ScoreCard score={review.score} counts={counts} dark={dark} />
 
       <div className="card p-3">
         <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
@@ -104,7 +105,7 @@ export default function ReviewPanel() {
         })}
       </div>
 
-      <p className="px-1 pb-2 text-[11px] leading-relaxed text-ink-400">
+      <p className="muted px-1 pb-2 text-[11px] leading-relaxed">
         These checks encode common résumé-screening conventions — they are a second pair of eyes,
         not a guarantee about any particular employer's system.
       </p>
@@ -112,8 +113,18 @@ export default function ReviewPanel() {
   )
 }
 
-function ScoreCard({ score, counts }: { score: number; counts: { critical: number; warning: number; suggestion: number } }) {
-  const hue = score >= 80 ? '#059669' : score >= 60 ? '#d97706' : '#dc2626'
+function ScoreCard({
+  score, counts, dark,
+}: {
+  score: number
+  counts: { critical: number; warning: number; suggestion: number }
+  dark: boolean
+}) {
+  // Darker on white, lighter on the dark surface — one fixed hue can't clear
+  // 4.5:1 against both.
+  const hue = dark
+    ? score >= 80 ? '#34d399' : score >= 60 ? '#fbbf24' : '#f87171'
+    : score >= 80 ? '#047857' : score >= 60 ? '#b45309' : '#b91c1c'
   const label = score >= 90 ? 'Excellent' : score >= 80 ? 'Strong' : score >= 60 ? 'Needs work' : 'Needs attention'
   const circumference = 2 * Math.PI * 30
 
@@ -133,7 +144,7 @@ function ScoreCard({ score, counts }: { score: number; counts: { critical: numbe
       </div>
       <div className="min-w-0">
         <p className="text-sm font-semibold" style={{ color: hue }}>{label}</p>
-        <p className="mt-0.5 text-xs text-ink-500 dark:text-ink-400">
+        <p className="muted mt-0.5 text-xs">
           {counts.critical} to fix · {counts.warning} warning{counts.warning === 1 ? '' : 's'} · {counts.suggestion} idea{counts.suggestion === 1 ? '' : 's'}
         </p>
       </div>
@@ -147,7 +158,7 @@ function Stat({ label, value, tone }: { label: string; value: string | number; t
       <span className="text-ink-500 dark:text-ink-400">{label}</span>
       <span
         className={`font-semibold tabular-nums ${
-          tone === 'warn' ? 'text-amber-600 dark:text-amber-400' : tone === 'good' ? 'text-emerald-600 dark:text-emerald-400' : ''
+          tone === 'warn' ? 'text-amber-700 dark:text-amber-400' : tone === 'good' ? 'text-emerald-700 dark:text-emerald-400' : ''
         }`}
       >
         {value}

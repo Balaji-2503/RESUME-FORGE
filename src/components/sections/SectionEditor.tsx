@@ -1,9 +1,10 @@
 import { Copy, Eye, EyeOff, Plus, Trash2 } from 'lucide-react'
 import BulletEditor from './BulletEditor'
 import DateRangeFields from './DateRangeFields'
-import { Collapsible, Empty, Grip, IconButton, Select, TagField, TextArea, TextField, useSortable } from '@/components/ui'
+import { Collapsible, Empty, Grip, IconButton, MoveButtons, Select, TagField, TextArea, TextField, useSortable } from '@/components/ui'
 import {
-  duplicateSection, moveItem, removeItem, removeSection, toggleItem, toggleSection, updateSection,
+  duplicateSection, moveItem, moveSection, removeItem, removeSection, toggleItem,
+  toggleSection, updateSection,
 } from '@/state/actions'
 import { newCustomItem, newEducation, newExperience, newProject, newSimple, newSkillGroup } from '@/lib/factory'
 import { dateRange } from '@/lib/format'
@@ -14,15 +15,16 @@ import type {
 
 /* Wrapper: title, visibility, delete, and the drag grip for the section list. */
 export default function SectionEditor({
-  section, index, gripProps, rowProps, isOver,
+  section, index, count, gripProps, rowProps, isOver,
 }: {
   section: Section
   index: number
+  count: number
   gripProps: Record<string, unknown>
   rowProps: Record<string, unknown>
   isOver: boolean
 }) {
-  const count = itemCount(section)
+  const summary = itemCount(section)
 
   return (
     <div {...rowProps} className={`rounded-xl transition ${isOver ? 'ring-2 ring-brand-500/50' : ''}`}>
@@ -34,10 +36,11 @@ export default function SectionEditor({
             <span>{section.title}</span>
           </span>
         }
-        subtitle={section.hidden ? 'Hidden from the résumé' : count}
+        subtitle={section.hidden ? 'Hidden from the résumé' : summary}
         defaultOpen={index < 2}
         actions={
           <>
+            <MoveButtons index={index} count={count} label="section" onMove={moveSection} />
             <IconButton label={section.hidden ? 'Show section' : 'Hide section'} onClick={() => toggleSection(section.id)}>
               {section.hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </IconButton>
@@ -87,22 +90,30 @@ function Body({ section }: { section: Section }) {
 /* ----------------------------------------------------------------- items -- */
 
 function ItemShell({
-  sectionId, itemId, title, subtitle, hidden, children,
+  sectionId, itemId, index, count, title, subtitle, hidden, children,
 }: {
   sectionId: string
   itemId: string
+  index: number
+  count: number
   title: string
   subtitle?: string
   hidden?: boolean
   children: React.ReactNode
-  }) {
+}) {
   return (
     <div className={`rounded-lg border border-ink-200 p-2.5 dark:border-ink-800 ${hidden ? 'opacity-55' : ''}`}>
       <div className="mb-2 flex items-center gap-1">
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium">{title || 'Untitled'}</div>
-          {subtitle ? <div className="truncate text-xs text-ink-400">{subtitle}</div> : null}
+          {subtitle ? <div className="muted truncate text-xs">{subtitle}</div> : null}
         </div>
+        <MoveButtons
+          index={index}
+          count={count}
+          label="entry"
+          onMove={(from, to) => moveItem(sectionId, from, to)}
+        />
         <IconButton label={hidden ? 'Show entry' : 'Hide entry'} onClick={() => toggleItem(sectionId, itemId)}>
           {hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
         </IconButton>
@@ -124,7 +135,7 @@ function ItemList({
   onAdd: () => void
   addLabel: string
   empty: string
-  children: (id: string, index: number, grip: Record<string, unknown>) => React.ReactNode
+  children: (id: string, index: number, count: number) => React.ReactNode
 }) {
   const sortable = useSortable((from, to) => moveItem(sectionId, from, to))
   return (
@@ -139,7 +150,7 @@ function ItemList({
           <div className="pt-3">
             <Grip {...sortable.gripProps(index)} />
           </div>
-          <div className="min-w-0 flex-1">{children(id, index, sortable.gripProps(index))}</div>
+          <div className="min-w-0 flex-1">{children(id, index, ids.length)}</div>
         </div>
       ))}
       <button type="button" className="btn-soft w-full !py-1.5 text-xs" onClick={onAdd}>
@@ -179,12 +190,14 @@ function ExperienceBody({ section }: { section: ExperienceSection }) {
       empty="No roles yet."
       onAdd={() => updateSection<ExperienceSection>(section.id, (s) => { s.items.push(newExperience()) })}
     >
-      {(id) => {
+      {(id, index, count) => {
         const item = section.items.find((i) => i.id === id)!
         return (
           <ItemShell
             sectionId={section.id}
             itemId={id}
+            index={index}
+            count={count}
             hidden={item.hidden}
             title={item.role || item.company}
             subtitle={[item.company && item.role ? item.company : '', dateRange(item.start, item.end, item.current)].filter(Boolean).join(' · ')}
@@ -227,10 +240,10 @@ function EducationBody({ section }: { section: EducationSection }) {
       empty="No qualifications yet."
       onAdd={() => updateSection<EducationSection>(section.id, (s) => { s.items.push(newEducation()) })}
     >
-      {(id) => {
+      {(id, index, count) => {
         const item = section.items.find((i) => i.id === id)!
         return (
-          <ItemShell sectionId={section.id} itemId={id} hidden={item.hidden} title={item.degree || item.school} subtitle={item.school && item.degree ? item.school : ''}>
+          <ItemShell sectionId={section.id} itemId={id} index={index} count={count} hidden={item.hidden} title={item.degree || item.school} subtitle={item.school && item.degree ? item.school : ''}>
             <div className="space-y-2">
               <TextField label="Degree" value={item.degree} onChange={(v) => edit(id, (i) => { i.degree = v })} placeholder="B.E. Computer Science" />
               <div className="grid grid-cols-2 gap-2">
@@ -269,10 +282,10 @@ function ProjectsBody({ section }: { section: ProjectsSection }) {
       empty="No projects yet."
       onAdd={() => updateSection<ProjectsSection>(section.id, (s) => { s.items.push(newProject()) })}
     >
-      {(id) => {
+      {(id, index, count) => {
         const item = section.items.find((i) => i.id === id)!
         return (
-          <ItemShell sectionId={section.id} itemId={id} hidden={item.hidden} title={item.name} subtitle={item.role}>
+          <ItemShell sectionId={section.id} itemId={id} index={index} count={count} hidden={item.hidden} title={item.name} subtitle={item.role}>
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <TextField label="Project" value={item.name} onChange={(v) => edit(id, (i) => { i.name = v })} placeholder="ledgerlite" />
@@ -320,10 +333,10 @@ function SkillsBody({ section }: { section: SkillsSection }) {
         empty="No skill groups yet."
         onAdd={() => updateSection<SkillsSection>(section.id, (s) => { s.groups.push(newSkillGroup()) })}
       >
-        {(id) => {
+        {(id, index, count) => {
           const group = section.groups.find((g) => g.id === id)!
           return (
-            <ItemShell sectionId={section.id} itemId={id} hidden={group.hidden} title={group.label || 'Group'} subtitle={`${group.skills.length} skills`}>
+            <ItemShell sectionId={section.id} itemId={id} index={index} count={count} hidden={group.hidden} title={group.label || 'Group'} subtitle={`${group.skills.length} skills`}>
               <div className="space-y-2">
                 <TextField label="Group label" value={group.label} onChange={(v) => edit(id, (g) => { g.label = v })} placeholder="Languages" />
                 <TagField label="Skills" values={group.skills} onChange={(next) => edit(id, (g) => { g.skills = next })} placeholder="Type a skill, press Enter" />
@@ -361,10 +374,10 @@ function SimpleBody({ section }: { section: SimpleSection }) {
       empty="Nothing here yet."
       onAdd={() => updateSection<SimpleSection>(section.id, (s) => { s.items.push(newSimple()) })}
     >
-      {(id) => {
+      {(id, index, count) => {
         const item = section.items.find((i) => i.id === id)!
         return (
-          <ItemShell sectionId={section.id} itemId={id} hidden={item.hidden} title={item.title} subtitle={item.subtitle}>
+          <ItemShell sectionId={section.id} itemId={id} index={index} count={count} hidden={item.hidden} title={item.title} subtitle={item.subtitle}>
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <TextField label={l.title} value={item.title} onChange={(v) => edit(id, (i) => { i.title = v })} />
@@ -396,10 +409,10 @@ function CustomBody({ section }: { section: CustomSection }) {
       empty="No entries yet."
       onAdd={() => updateSection<CustomSection>(section.id, (s) => { s.items.push(newCustomItem()) })}
     >
-      {(id) => {
+      {(id, index, count) => {
         const item = section.items.find((i) => i.id === id)!
         return (
-          <ItemShell sectionId={section.id} itemId={id} hidden={item.hidden} title={item.title} subtitle={item.subtitle}>
+          <ItemShell sectionId={section.id} itemId={id} index={index} count={count} hidden={item.hidden} title={item.title} subtitle={item.subtitle}>
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <TextField label="Title" value={item.title} onChange={(v) => edit(id, (i) => { i.title = v })} />

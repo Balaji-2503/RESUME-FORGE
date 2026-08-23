@@ -66,7 +66,7 @@ export default function TopBar() {
         aria-label="Résumé name"
       />
 
-      <span className="hidden text-[11px] text-ink-400 lg:block">Saved {relativeTime(resume.updatedAt)}</span>
+      <span className="muted hidden text-[11px] lg:block">Saved {relativeTime(resume.updatedAt)}</span>
 
       <div className="ml-auto flex items-center gap-1">
         {notice ? (
@@ -100,7 +100,9 @@ export default function TopBar() {
         </IconAction>
         <IconAction label="Copy as plain text" onClick={copyPlainText}><FileText className="h-4 w-4" /></IconAction>
 
-        <button className="btn-primary ml-1" onClick={printResume}>
+        {/* The label is hidden on narrow screens, so the name has to come
+            from aria-label or the button is unlabelled for screen readers. */}
+        <button className="btn-primary ml-1" onClick={printResume} aria-label="Download PDF">
           <Download className="h-4 w-4" />
           <span className="hidden sm:inline">Download PDF</span>
         </button>
@@ -161,7 +163,7 @@ function DocumentMenu({
                   onClick={() => { store.setActive(r.id); setOpen(false) }}
                 >
                   <span className="block truncate">{r.name}</span>
-                  <span className="block text-[11px] text-ink-400">Edited {relativeTime(r.updatedAt)}</span>
+                  <span className="muted block text-[11px]">Edited {relativeTime(r.updatedAt)}</span>
                 </button>
                 <button
                   type="button"

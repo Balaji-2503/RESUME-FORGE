@@ -2,7 +2,7 @@ import {
   useCallback, useEffect, useId, useLayoutEffect, useRef, useState,
   type ReactNode, type TextareaHTMLAttributes,
 } from 'react'
-import { ChevronDown, GripVertical } from 'lucide-react'
+import { ChevronDown, ChevronUp, GripVertical } from 'lucide-react'
 
 /* ---------------------------------------------------------------- inputs -- */
 
@@ -31,7 +31,7 @@ export function TextField({
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
       />
-      {hint ? <p className="mt-1 text-[11px] text-ink-400">{hint}</p> : null}
+      {hint ? <p className="muted mt-1 text-[11px]">{hint}</p> : null}
     </div>
   )
 }
@@ -83,7 +83,7 @@ export function TextArea({
     <div className={className}>
       {label ? <span className="label">{label}</span> : null}
       <AutoTextarea value={value} onValueChange={onChange} placeholder={placeholder} minRows={minRows} />
-      {hint ? <p className="mt-1 text-[11px] text-ink-400">{hint}</p> : null}
+      {hint ? <p className="muted mt-1 text-[11px]">{hint}</p> : null}
     </div>
   )
 }
@@ -122,7 +122,7 @@ export function Toggle({
     <label className="flex cursor-pointer items-center justify-between gap-3 py-1">
       <span className="min-w-0">
         <span className="text-sm text-ink-700 dark:text-ink-200">{label}</span>
-        {hint ? <span className="block text-[11px] text-ink-400">{hint}</span> : null}
+        {hint ? <span className="muted block text-[11px]">{hint}</span> : null}
       </span>
       <span className="relative inline-flex shrink-0">
         <input type="checkbox" className="peer sr-only" checked={checked} onChange={(e) => onChange(e.target.checked)} />
@@ -186,6 +186,7 @@ export function ColorField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           spellCheck={false}
+          aria-label={`${label} hex value`}
         />
       </div>
       {swatches.length ? (
@@ -289,7 +290,7 @@ export function Collapsible({
           <ChevronDown className={`h-4 w-4 shrink-0 text-ink-400 transition-transform ${open ? '' : '-rotate-90'}`} />
           <span className="min-w-0">
             <span className="block truncate text-sm font-medium">{title}</span>
-            {subtitle ? <span className="block truncate text-xs text-ink-400">{subtitle}</span> : null}
+            {subtitle ? <span className="muted block truncate text-xs">{subtitle}</span> : null}
           </span>
         </button>
         {actions ? <div className="flex shrink-0 items-center gap-0.5">{actions}</div> : null}
@@ -328,7 +329,7 @@ export function IconButton({
 
 export function Empty({ children }: { children: ReactNode }) {
   return (
-    <p className="rounded-lg border border-dashed border-ink-300 px-3 py-4 text-center text-xs text-ink-400 dark:border-ink-700">
+    <p className="muted rounded-lg border border-dashed border-ink-300 px-3 py-4 text-center text-xs dark:border-ink-700">
       {children}
     </p>
   )
@@ -376,12 +377,36 @@ export function useSortable(onMove: (from: number, to: number) => void) {
   }
 }
 
+/** The keyboard- and touch-accessible counterpart to the drag grip: HTML5
+ *  drag events never fire on touch, and a grip can't be operated by keyboard.
+ *  These buttons are the path that always works. */
+export function MoveButtons({
+  index, count, onMove, label,
+}: {
+  index: number
+  count: number
+  onMove: (from: number, to: number) => void
+  label: string
+}) {
+  if (count < 2) return null
+  return (
+    <>
+      <IconButton label={`Move ${label} up`} disabled={index === 0} onClick={() => onMove(index, index - 1)}>
+        <ChevronUp className="h-3.5 w-3.5" />
+      </IconButton>
+      <IconButton label={`Move ${label} down`} disabled={index === count - 1} onClick={() => onMove(index, index + 1)}>
+        <ChevronDown className="h-3.5 w-3.5" />
+      </IconButton>
+    </>
+  )
+}
+
 export function Grip(props: Record<string, unknown>) {
   return (
     <span
       {...props}
-      className="cursor-grab touch-none rounded p-1 text-ink-300 hover:text-ink-500 active:cursor-grabbing dark:text-ink-600 dark:hover:text-ink-300"
-      title="Drag to reorder"
+      className="hidden cursor-grab touch-none rounded p-1 text-ink-300 hover:text-ink-500 active:cursor-grabbing lg:inline-block dark:text-ink-600 dark:hover:text-ink-300"
+      title="Drag to reorder (or use the arrow buttons)"
     >
       <GripVertical className="h-4 w-4" />
     </span>

@@ -88,6 +88,7 @@ export default function ContentPanel() {
           key={section.id}
           section={section}
           index={index}
+          count={resume.sections.length}
           isOver={sortable.overIndex === index}
           rowProps={sortable.rowProps(index)}
           gripProps={sortable.gripProps(index)}

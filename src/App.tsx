@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from 'react'
-import { LayoutList, Palette, ShieldCheck } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { FileText, LayoutList, Palette, PencilLine, ShieldCheck } from 'lucide-react'
 import Preview from './components/Preview'
 import PrintRoot, { printResume } from './components/PrintRoot'
 import TopBar from './components/TopBar'
@@ -20,6 +20,10 @@ const PANELS: { id: AppState['ui']['panel']; label: string; icon: typeof LayoutL
 export default function App() {
   const resume = useResume()
   const { dark, panel } = useUI()
+  // Below `lg` the editor and the page can't sit side by side, so they take
+  // turns. Transient by design — which pane you last looked at is not worth
+  // restoring on a later visit.
+  const [pane, setPane] = useState<'edit' | 'preview'>('edit')
 
   const issues = useMemo(() => {
     const { findings } = reviewResume(resume)
@@ -54,8 +58,34 @@ export default function App() {
     <div className="flex h-full flex-col overflow-hidden">
       <TopBar />
 
+      <div className="no-print flex border-b border-ink-200 bg-white px-2 py-1.5 lg:hidden dark:border-ink-800 dark:bg-ink-900">
+        {([
+          { id: 'edit' as const, label: 'Edit', icon: PencilLine },
+          { id: 'preview' as const, label: 'Preview', icon: FileText },
+        ]).map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => setPane(p.id)}
+            aria-current={pane === p.id}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition ${
+              pane === p.id
+                ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300'
+                : 'text-ink-600 dark:text-ink-400'
+            }`}
+          >
+            <p.icon className="h-4 w-4" />
+            {p.label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        <aside className="no-print flex w-full min-w-0 flex-col border-r border-ink-200 bg-ink-50 lg:w-[27rem] lg:shrink-0 dark:border-ink-800 dark:bg-ink-950">
+        <aside
+          className={`no-print w-full min-w-0 flex-col border-r border-ink-200 bg-ink-50 lg:flex lg:w-[27rem] lg:shrink-0 dark:border-ink-800 dark:bg-ink-950 ${
+            pane === 'edit' ? 'flex' : 'hidden'
+          }`}
+        >
           <nav className="flex gap-1 border-b border-ink-200 bg-white px-2 py-1.5 dark:border-ink-800 dark:bg-ink-900">
             {PANELS.map((p) => {
               const active = panel === p.id
@@ -67,7 +97,7 @@ export default function App() {
                   className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                     active
                       ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300'
-                      : 'text-ink-500 hover:bg-ink-100 hover:text-ink-800 dark:hover:bg-ink-800 dark:hover:text-ink-100'
+                      : 'text-ink-600 hover:bg-ink-100 hover:text-ink-900 dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-ink-100'
                   }`}
                   aria-current={active}
                 >
@@ -89,12 +119,14 @@ export default function App() {
             {panel === 'review' ? <ReviewPanel /> : null}
           </div>
 
-          <footer className="border-t border-ink-200 px-3 py-2 text-[11px] leading-relaxed text-ink-400 dark:border-ink-800">
+          <footer className="muted border-t border-ink-200 px-3 py-2 text-[11px] leading-relaxed dark:border-ink-800">
             Everything stays in this browser — no account, no upload, no server.
           </footer>
         </aside>
 
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <main
+          className={`min-h-0 min-w-0 flex-1 flex-col lg:flex ${pane === 'preview' ? 'flex' : 'hidden'}`}
+        >
           <Preview />
         </main>
       </div>

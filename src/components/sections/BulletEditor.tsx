@@ -1,5 +1,5 @@
 import { Plus, Trash2 } from 'lucide-react'
-import { AutoTextarea, Grip, IconButton, useSortable } from '@/components/ui'
+import { AutoTextarea, Grip, IconButton, MoveButtons, useSortable } from '@/components/ui'
 import { move } from '@/state/actions'
 
 /** Bullet list editor. Enter adds the next bullet, Backspace on an empty one
@@ -33,7 +33,7 @@ export default function BulletEditor({
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         <span className="label !mb-0">Bullets</span>
-        <span className="text-[10px] text-ink-400">**bold** · *italic*</span>
+        <span className="muted text-[10px]">**bold** · *italic*</span>
       </div>
 
       {bullets.map((bullet, index) => (
@@ -57,7 +57,13 @@ export default function BulletEditor({
               if (e.key === 'Backspace' && !bullet && bullets.length > 1) { e.preventDefault(); removeAt(index) }
             }}
           />
-          <div className="opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+          <div className="flex shrink-0 items-center">
+            <MoveButtons
+              index={index}
+              count={bullets.length}
+              label="bullet"
+              onMove={(from, to) => onChange(move(bullets, from, to))}
+            />
             <IconButton label="Remove bullet" danger onClick={() => removeAt(index)}>
               <Trash2 className="h-3.5 w-3.5" />
             </IconButton>
