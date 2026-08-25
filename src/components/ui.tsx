@@ -7,7 +7,7 @@ import { ChevronDown, ChevronUp, GripVertical } from 'lucide-react'
 /* ---------------------------------------------------------------- inputs -- */
 
 export function TextField({
-  label, value, onChange, placeholder, type = 'text', hint, className = '', list,
+  label, value, onChange, placeholder, type = 'text', hint, className = '', list, onBlur, autoFocus,
 }: {
   label?: string
   value: string
@@ -17,6 +17,8 @@ export function TextField({
   hint?: string
   className?: string
   list?: string
+  onBlur?: () => void
+  autoFocus?: boolean
 }) {
   const id = useId()
   return (
@@ -30,6 +32,8 @@ export function TextField({
         list={list}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
+        autoFocus={autoFocus}
       />
       {hint ? <p className="muted mt-1 text-[11px]">{hint}</p> : null}
     </div>

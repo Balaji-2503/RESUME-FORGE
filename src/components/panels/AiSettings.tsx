@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ExternalLink, Sparkles } from 'lucide-react'
 import { Collapsible, Select, TextField } from '@/components/ui'
 import { PROVIDERS, activeKey, isReady, maskKey, providerById, type ProviderId } from '@/lib/ai/config'
@@ -8,8 +8,19 @@ export default function AiSettings() {
   const config = useAiConfig()
   const provider = providerById(config.provider)
   const key = activeKey(config)
-  const [editing, setEditing] = useState(false)
   const ready = isReady(config)
+
+  // Show the input while the user is entering a key, and keep showing it until
+  // they leave the field. Deciding this from `key` being non-empty instead
+  // unmounted the input on the first keystroke, so only that one character was
+  // ever saved — a typed key silently became "g".
+  const [entering, setEntering] = useState(() => key.length === 0)
+
+  // Switching provider swaps in that provider's own key, if it has one.
+  useEffect(() => {
+    setEntering(activeKey(config).length === 0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.provider])
 
   const switchProvider = (id: ProviderId) => {
     const next = providerById(id)
@@ -46,17 +57,17 @@ export default function AiSettings() {
         />
         <p className="muted text-[11px]">{provider.note}</p>
 
-        {key && !editing ? (
+        {key && !entering ? (
           <div className="flex items-center justify-between gap-2 rounded-lg border border-ink-200 px-2.5 py-2 dark:border-ink-700">
             <span className="font-mono text-xs">{maskKey(key)}</span>
             <span className="flex gap-1">
-              <button type="button" className="btn-ghost !px-2 !py-1 text-xs" onClick={() => setEditing(true)}>
+              <button type="button" className="btn-ghost !px-2 !py-1 text-xs" onClick={() => setEntering(true)}>
                 Replace
               </button>
               <button
                 type="button"
                 className="btn-danger !px-2 !py-1 text-xs"
-                onClick={() => { aiStore.setKey(''); setEditing(false) }}
+                onClick={() => { aiStore.setKey(''); setEntering(true) }}
               >
                 Remove
               </button>
@@ -70,6 +81,7 @@ export default function AiSettings() {
               value={key}
               placeholder={provider.keyHint}
               onChange={(v) => aiStore.setKey(v)}
+              onBlur={() => { if (activeKey(aiStore.get())) setEntering(false) }}
             />
             {provider.keysUrl ? (
               <a

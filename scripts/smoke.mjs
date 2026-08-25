@@ -103,6 +103,32 @@ await page.getByRole('button', { name: /Review/ }).click()
 await page.waitForTimeout(400)
 check('the review renders a score', /\d+/.test(await page.locator('.card span.absolute').first().innerText()))
 
+// AI assist key handling. Typing is tested one keystroke at a time on purpose:
+// a paste hides the bug where the input unmounts once the value is non-empty,
+// which silently saved only the first character of a typed key.
+await page.getByRole('button', { name: /Review/ }).click()
+await page.waitForTimeout(400)
+const FAKE_KEY = 'gsk_smoketest_abcdefghijklmnop123456'
+await page.getByLabel('API key').pressSequentially(FAKE_KEY, { delay: 5 })
+await page.waitForTimeout(400)
+const readKey = () => page.evaluate(() => {
+  try { return JSON.parse(localStorage.getItem('resume-forge:ai') ?? '{}').keys?.groq ?? '' } catch { return '' }
+})
+check('a typed API key is saved in full', (await readKey()) === FAKE_KEY)
+
+await page.reload({ waitUntil: 'networkidle' })
+await page.getByRole('button', { name: /Review/ }).click()
+await page.waitForTimeout(400)
+check('the key survives a reload', (await readKey()) === FAKE_KEY)
+check('the key is never written into the résumé document',
+  !(await page.evaluate(() => localStorage.getItem('resume-forge:v1') ?? '')).includes(FAKE_KEY))
+
+await page.getByRole('button', { name: /AI assist/ }).click()
+await page.waitForTimeout(300)
+await page.getByRole('button', { name: 'Remove' }).click()
+await page.waitForTimeout(300)
+check('Remove wipes the key', (await readKey()) === '')
+
 // Export.
 const [downloaded] = await Promise.all([
   page.waitForEvent('download'),
