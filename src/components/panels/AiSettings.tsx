@@ -89,7 +89,7 @@ export default function AiSettings() {
             label="Model"
             value={config.model}
             onChange={(model) => aiStore.update({ model })}
-            options={provider.models.map((m) => ({ value: m, label: m }))}
+            options={provider.models.map((m) => ({ value: m.id, label: m.label }))}
           />
         ) : (
           <TextField label="Model" value={config.model} onChange={(model) => aiStore.update({ model })} placeholder="model-id" />

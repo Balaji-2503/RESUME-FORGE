@@ -67,8 +67,9 @@ that is secretly an image. Resume Forge is built around three ideas:
   instead of supplying one — a fabricated metric is a fabricated credential, and
   you are the one who has to defend it in the interview
 - Runs on **your own API key**, called straight from the browser. Works with
-  Groq (free tier), or any OpenAI-compatible endpoint — OpenRouter, Together, a
-  local llama.cpp server
+  Groq (free tier) — GPT-OSS 120B by default, with Llama 3.3 70B and two faster
+  models to pick from — or any OpenAI-compatible endpoint: OpenRouter, Together,
+  a local llama.cpp server
 - Only the single bullet you clicked, plus its job title, is ever sent. The key
   is stored in this browser alone and never appears in a résumé export
 
@@ -173,6 +174,14 @@ That only works if the provider allows browser-origin requests. Groq does
 (`access-control-allow-origin: *`), which is why it is the default and why the
 provider list is limited to endpoints that have been checked. Anything speaking
 the OpenAI `/chat/completions` shape can be plugged in under *Other*.
+
+**An environment variable would not help here, it would make things worse.**
+There is no server, so a build-time env var (`VITE_…`) is inlined into the
+JavaScript bundle — and that bundle is public on GitHub Pages. The "secret"
+would ship in plain text for anyone who opens devtools. Same for a GitHub
+Actions secret injected at build time. A key can only stay secret behind a
+server, and this app deliberately has none, which is why it is the user's own
+key held on the user's own machine.
 
 The honest trade-off: a key in `localStorage` is readable by any script that
 runs on the page. This page loads no third-party scripts and injects no

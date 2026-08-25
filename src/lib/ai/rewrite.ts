@@ -55,18 +55,56 @@ function buildUserMessage(ctx: RewriteContext): string {
   return lines.join('\n')
 }
 
-/** Models sometimes wrap JSON in a fence or add a preamble despite being told
- *  not to. Recover the object rather than failing the user's click. */
-function extractJson(raw: string): unknown {
-  const trimmed = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/```$/, '').trim()
-  try {
-    return JSON.parse(trimmed)
-  } catch {
-    const start = trimmed.indexOf('{')
-    const end = trimmed.lastIndexOf('}')
-    if (start === -1 || end <= start) throw new Error('The model did not return JSON.')
-    return JSON.parse(trimmed.slice(start, end + 1))
+/** Walks the string and returns every balanced `{...}` span, ignoring braces
+ *  that appear inside JSON strings. */
+function* candidateObjects(text: string): Generator<string> {
+  for (let start = text.indexOf('{'); start !== -1; start = text.indexOf('{', start + 1)) {
+    let depth = 0
+    let inString = false
+    let escaped = false
+    for (let i = start; i < text.length; i++) {
+      const c = text[i]
+      if (escaped) { escaped = false; continue }
+      if (c === '\\') { escaped = true; continue }
+      if (c === '"') { inString = !inString; continue }
+      if (inString) continue
+      if (c === '{') depth++
+      else if (c === '}') {
+        depth--
+        if (depth === 0) { yield text.slice(start, i + 1); break }
+      }
+    }
   }
+}
+
+/** Models wrap JSON in fences, add a preamble, or — for reasoning models —
+ *  emit their thinking first, which can itself contain braces. So rather than
+ *  assuming the first `{` and last `}` bound the answer, try each balanced
+ *  object and take the first that parses and actually looks like our shape. */
+function extractJson(raw: string): unknown {
+  const text = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim()
+
+  try {
+    const direct = JSON.parse(text)
+    if (direct && typeof direct === 'object') return direct
+  } catch {
+    /* fall through to scanning */
+  }
+
+  let firstParsed: unknown
+  for (const candidate of candidateObjects(text)) {
+    try {
+      const parsed = JSON.parse(candidate)
+      if (parsed && typeof parsed === 'object') {
+        if ('variants' in (parsed as Record<string, unknown>)) return parsed
+        if (firstParsed === undefined) firstParsed = parsed
+      }
+    } catch {
+      /* not this one */
+    }
+  }
+  if (firstParsed !== undefined) return firstParsed
+  throw new Error('The model did not return JSON.')
 }
 
 /** Hand-rolled, matching lib/schema.ts — the project validates untrusted JSON
@@ -129,7 +167,7 @@ export async function rewriteBullet(
       body: JSON.stringify({
         model: config.model,
         temperature: 0.6,
-        max_tokens: 900,
+        max_tokens: 1600,
         // Honoured by Groq and most compatible endpoints; extractJson covers
         // the ones that ignore it.
         response_format: { type: 'json_object' },

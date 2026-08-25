@@ -10,6 +10,12 @@
 
 export type ProviderId = 'groq' | 'compatible'
 
+export interface ModelOption {
+  id: string
+  /** Shown in the picker — what this one is good for, not just its name. */
+  label: string
+}
+
 export interface Provider {
   id: ProviderId
   label: string
@@ -17,7 +23,7 @@ export interface Provider {
   keysUrl: string
   keyHint: string
   defaultModel: string
-  models: string[]
+  models: ModelOption[]
   /** Fixed for hosted providers; editable for 'compatible'. */
   baseUrl: string
   note: string
@@ -30,7 +36,16 @@ export const PROVIDERS: Provider[] = [
     keysUrl: 'https://console.groq.com/keys',
     keyHint: 'gsk_…',
     defaultModel: 'openai/gpt-oss-120b',
-    models: ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'],
+    // Groq's production text models, best-quality first. Preview models are
+    // excluded on purpose (Groq ships them for evaluation only), and so is
+    // groq/compound — it browses the web, which has no business seeing a
+    // half-written résumé bullet.
+    models: [
+      { id: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B — best quality (default)' },
+      { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B — strong alternative' },
+      { id: 'openai/gpt-oss-20b', label: 'GPT-OSS 20B — faster, cheaper' },
+      { id: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B — fastest, roughest' },
+    ],
     baseUrl: 'https://api.groq.com/openai/v1',
     note: 'Has a free tier. Fast, and enough for rewriting a bullet.',
   },
